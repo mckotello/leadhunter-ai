@@ -1,7 +1,7 @@
 import logging
 
 from app.agents.parser_agent import ParsedCompany
-from app.integrations.llm.client import LLMClient
+from app.integrations.llm.client import LLMClient, LLMError
 from app.schemas.domain import AIAnalysisResult, FactReference
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,9 @@ class AIAnalystAgent:
         user = self._build_prompt(company_name, parsed, niche, need_type)
         try:
             return self.llm.complete_json(SYSTEM, user, AIAnalysisResult)
+        except LLMError as exc:
+            logger.warning("AI analysis LLM error, fallback: %s", exc)
+            return self._fallback(company_name, parsed)
         except Exception as exc:
             logger.exception("AI analysis failed, using heuristic fallback: %s", exc)
             return self._fallback(company_name, parsed)

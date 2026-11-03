@@ -237,7 +237,7 @@ class Orchestrator:
             analysis=analysis,
             has_phone=bool(company.phone),
             has_email=bool(company.email),
-            has_website=bool(company.website),
+            parsed=parsed,
         )
 
         lead.detected_needs = analysis.assumed_needs

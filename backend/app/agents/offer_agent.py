@@ -2,7 +2,7 @@ import json
 import logging
 
 from app.config import settings
-from app.integrations.llm.client import LLMClient
+from app.integrations.llm.client import LLMClient, LLMError
 from app.schemas.domain import AIAnalysisResult, OfferDraft
 
 logger = logging.getLogger(__name__)
@@ -29,19 +29,25 @@ class OfferAgent:
         )
         try:
             return self.llm.complete_json(system, user, OfferDraft)
+        except LLMError as exc:
+            logger.warning("Offer generation LLM error, fallback: %s", exc)
+            return self._fallback(company_name, analysis)
         except Exception as exc:
             logger.exception("Offer generation fallback: %s", exc)
-            service = analysis.recommended_service
-            return OfferDraft(
-                introduction=f"Здравствуйте! Изучили сайт {company_name}.",
-                business_problem="; ".join(analysis.identified_issues[:3]),
-                proposed_solution=f"Предлагаем {service}.",
-                expected_benefit="Сокращение ручной обработки заявок и рост конверсии.",
-                first_message_draft=(
-                    f"Добрый день! Видим возможность улучшить {service.lower()} для {company_name}. "
-                    "Можем обсудить короткий созвон?"
-                ),
-            )
+            return self._fallback(company_name, analysis)
+
+    def _fallback(self, company_name: str, analysis: AIAnalysisResult) -> OfferDraft:
+        service = analysis.recommended_service
+        return OfferDraft(
+            introduction=f"Здравствуйте! Изучили сайт {company_name}.",
+            business_problem="; ".join(analysis.identified_issues[:3]),
+            proposed_solution=f"Предлагаем {service}.",
+            expected_benefit="Сокращение ручной обработки заявок и рост конверсии.",
+            first_message_draft=(
+                f"Добрый день! Видим возможность улучшить {service.lower()} для {company_name}. "
+                "Можем обсудить короткий созвон?"
+            ),
+        )
 
     def format_offer_text(self, draft: OfferDraft) -> str:
         return (

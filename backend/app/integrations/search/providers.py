@@ -40,16 +40,29 @@ class SerpApiSearchProvider(SearchProvider):
             for query in queries:
                 if len(hits) >= limit:
                     break
-                resp = await client.get(
-                    "https://serpapi.com/search.json",
-                    params={
-                        "engine": "google",
-                        "q": query,
-                        "api_key": settings.serpapi_api_key,
-                        "num": min(10, limit),
-                    },
-                )
-                resp.raise_for_status()
+                try:
+                    resp = await client.get(
+                        "https://serpapi.com/search.json",
+                        params={
+                            "engine": "google",
+                            "q": query,
+                            "api_key": settings.serpapi_api_key,
+                            "num": min(10, limit),
+                        },
+                    )
+                    resp.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    logger.error(
+                        "SerpAPI HTTP %s для запроса %r: %s",
+                        exc.response.status_code,
+                        query,
+                        exc.response.text[:200],
+                    )
+                    continue
+                except httpx.RequestError as exc:
+                    logger.error("SerpAPI сетевая ошибка для %r: %s", query, exc)
+                    continue
+
                 data = resp.json()
                 for item in data.get("organic_results", []):
                     link = item.get("link")

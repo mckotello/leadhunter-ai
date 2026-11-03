@@ -25,12 +25,25 @@ class Settings(BaseSettings):
 
     http_timeout: float = 30.0
     http_max_retries: int = 3
+    http_max_redirects: int = 10
     http_rate_limit_per_domain: float = 1.0
     allowed_url_schemes: str = "http,https"
     block_private_networks: bool = True
 
+    cors_origins: str = "http://localhost:8080,http://127.0.0.1:8080"
+    cors_allow_credentials: bool = True
+
+    postgres_user: str = "leadhunter"
+    postgres_password: str = "leadhunter"
+    postgres_db: str = "leadhunter"
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+
     studio_name: str = "IT Studio"
     studio_services: str = "Разработка сайтов и веб-сервисов"
+
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 settings = Settings()

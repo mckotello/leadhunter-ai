@@ -30,8 +30,11 @@ API документация: [http://localhost:8080/docs](http://localhost:8080
 | `SERPAPI_API_KEY` | Ключ SerpAPI при реальном поиске |
 | `LLM_BASE_URL` | URL OpenAI-compatible API (Ollama: `http://host.docker.internal:11434/v1`) |
 | `LLM_MODEL` | Имя модели |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Учётные данные PostgreSQL (Docker Compose) |
+| `CORS_ORIGINS` | Разрешённые origin через запятую (без `*` при credentials) |
+| `HTTP_MAX_REDIRECTS` | Лимит redirect при безопасном парсинге |
 
-При недоступности LLM включаются эвристические fallback-ответы.
+При недоступности LLM включаются эвристические fallback-ответы. SerpAPI и LLM логируют сетевые/HTTP ошибки и не подменяют реальные провайдеры mock-данными.
 
 ## Локальная разработка backend
 
@@ -64,6 +67,6 @@ Orchestrator
 
 ## Ограничения
 
-- Соблюдение robots.txt и SSRF-фильтрация URL.
+- SSRF-фильтрация URL, проверка DNS и каждого redirect при парсинге.
 - Автоотправка сообщений не реализована — только черновики.
 - Playwright подключён в ТЗ как опция; MVP использует HTTPX (JS-страницы можно добавить отдельным провайдером).

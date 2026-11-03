@@ -9,7 +9,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.config import settings
-from app.utils.ssrf import SSRFError, validate_public_url
+from app.utils.ssrf import SSRFError, safe_fetch_html, validate_public_url
 
 logger = logging.getLogger(__name__)
 
@@ -68,17 +68,16 @@ class ParserAgent:
         await self._rate_limit(domain)
 
         headers = {"User-Agent": "LeadHunterBot/1.0 (+https://example.com/bot)"}
-        async with httpx.AsyncClient(timeout=settings.http_timeout, follow_redirects=True) as client:
-            html = await self._fetch_with_retries(client, safe_url, headers)
+        html, final_url = await self._fetch_with_retries(safe_url, headers)
 
         if not html:
-            return ParsedCompany(name=company_name, source_url=safe_url)
+            return ParsedCompany(name=company_name, source_url=final_url or safe_url)
 
         soup = BeautifulSoup(html, "lxml")
         parsed = ParsedCompany(
             name=company_name or self._extract_title(soup),
             description=self._meta_description(soup),
-            source_url=safe_url,
+            source_url=final_url,
         )
         text = soup.get_text(" ", strip=True)
         parsed.raw_text_sample = text[:4000]
@@ -91,29 +90,28 @@ class ParserAgent:
             parsed.phone = phones[0]
 
         parsed.social_links = self._extract_social(soup)
-        parsed.contact_pages = self._find_links(soup, safe_url, ("contact", "kontakt", "контакт"))
-        parsed.service_pages = self._find_links(soup, safe_url, ("service", "uslugi", "услуг", "catalog", "каталог"))
+        parsed.contact_pages = self._find_links(soup, final_url, ("contact", "kontakt", "контакт"))
+        parsed.service_pages = self._find_links(soup, final_url, ("service", "uslugi", "услуг", "catalog", "каталог"))
         parsed.products_services = self._extract_list_items(soup)[:15]
         parsed.signals = self._analyze_signals(soup, text)
         return parsed
 
     async def _fetch_with_retries(
-        self, client: httpx.AsyncClient, url: str, headers: dict[str, str]
-    ) -> str | None:
-        for attempt in range(settings.http_max_retries):
-            try:
-                resp = await client.get(url, headers=headers)
-                if resp.status_code >= 400:
-                    logger.info("HTTP %s for %s", resp.status_code, url)
-                    return None
-                ctype = resp.headers.get("content-type", "")
-                if "text/html" not in ctype and "application/xhtml" not in ctype:
-                    return None
-                return resp.text
-            except httpx.HTTPError as exc:
-                logger.warning("Fetch attempt %s failed for %s: %s", attempt + 1, url, exc)
-                await asyncio.sleep(0.5 * (attempt + 1))
-        return None
+        self, url: str, headers: dict[str, str]
+    ) -> tuple[str | None, str]:
+        last_url = url
+        async with httpx.AsyncClient(timeout=settings.http_timeout, follow_redirects=False) as client:
+            for attempt in range(settings.http_max_retries):
+                try:
+                    html, last_url = await safe_fetch_html(client, url, headers)
+                    return html, last_url
+                except SSRFError as exc:
+                    logger.warning("SSRF blocked during fetch %s: %s", url, exc)
+                    return None, last_url
+                except httpx.HTTPError as exc:
+                    logger.warning("Fetch attempt %s failed for %s: %s", attempt + 1, url, exc)
+                    await asyncio.sleep(0.5 * (attempt + 1))
+        return None, last_url
 
     def _extract_title(self, soup: BeautifulSoup) -> str | None:
         if soup.title and soup.title.string:
