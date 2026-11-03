@@ -21,9 +21,6 @@ services:
     plan: starter
     healthCheckPath: /health
     autoDeployTrigger: commit
-    startCommand: >
-      sh -c "alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
     envVars:
       - key: SERVE_FRONTEND
         value: "true"
@@ -56,9 +53,8 @@ services:
   - type: worker
     name: leadhunter-worker
     runtime: docker
-    dockerfilePath: Dockerfile.cloud
+    dockerfilePath: Dockerfile.worker.cloud
     plan: starter
-    startCommand: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=1
     envVars:
       - key: SEARCH_PROVIDER
         value: mock
