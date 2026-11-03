@@ -11,6 +11,17 @@ Pet-проект платформы автоматизированного по�
 - Фоновая обработка через Celery + Redis
 - PostgreSQL, Alembic, Docker Compose
 
+## Просмотр без Docker (для коллег)
+
+**GitHub Pages** публикует интерфейс с **демо-данными** (без backend):
+
+1. В репозитории: **Settings → Pages → Source: GitHub Actions**.
+2. После push в `main` откройте: **https://mckotello.github.io/leadhunter-ai/**
+
+Локально тот же демо-режим: http://localhost:8080/?demo=1
+
+Подробнее: [docs/hosting.md](docs/hosting.md)
+
 ## Быстрый старт
 
 ```bash
