@@ -18,9 +18,16 @@ https://mckotello.github.io/leadhunter-ai/
 ### Как включить (один раз, владелец репозитория)
 
 1. GitHub → репозиторий **leadhunter-ai** → **Settings** → **Pages**.
-2. **Build and deployment** → Source: **GitHub Actions**.
-3. Дождаться успешного workflow **Deploy GitHub Pages** после push в `main`.
-4. Отправить ссылку `https://<user>.github.io/leadhunter-ai/` коллеге.
+2. **Build and deployment** → Source: **GitHub Actions** (как на вашем скрине — уже верно).
+3. Вкладка **Actions** → workflow **Deploy GitHub Pages** → **Run workflow** → Run (если после push сайт ещё не появился).
+4. Дождитесь зелёной галочки у job **deploy** (1–2 минуты).
+5. Снова **Settings → Pages** — появится ссылка **Visit site**.
+
+Если job красный: откройте лог → часто нужно один раз подтвердить environment **github-pages** (Review deployments).
+
+6. Отправить коллеге: `https://mckotello.github.io/leadhunter-ai/`
+
+**Важно:** репозиторий должен быть **Public** (для бесплатного Pages на личном аккаунте). Private + Pages на free-плане недоступен.
 
 ## 2. Полная система (backend + БД) — без Docker у зрителя
 
