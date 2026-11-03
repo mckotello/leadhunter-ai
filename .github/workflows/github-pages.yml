@@ -24,6 +24,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject cloud API URL (optional)
+        env:
+          LEADHUNTER_API_URL: ${{ secrets.LEADHUNTER_API_URL }}
+        run: |
+          if [ -n "$LEADHUNTER_API_URL" ]; then
+            echo "window.LeadHunterPublicConfig={apiBase:'${LEADHUNTER_API_URL}'};" > frontend/assets/js/config.public.js
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

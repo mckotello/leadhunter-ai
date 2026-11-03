@@ -1,0 +1,83 @@
+# Render Blueprint: полный LeadHunter (API + UI + Celery worker)
+# Документация: docs/cloud-deploy.md
+
+databases:
+  - name: leadhunter-db
+    plan: basic-256mb
+    databaseName: leadhunter
+    user: leadhunter
+
+services:
+  - type: keyvalue
+    name: leadhunter-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  - type: web
+    name: leadhunter
+    runtime: docker
+    dockerfilePath: Dockerfile.cloud
+    plan: starter
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    startCommand: >
+      sh -c "alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+    envVars:
+      - key: SERVE_FRONTEND
+        value: "true"
+      - key: FRONTEND_PATH
+        value: /frontend
+      - key: SEARCH_PROVIDER
+        value: mock
+      - key: CORS_ORIGINS
+        value: https://mckotello.github.io,https://leadhunter.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: leadhunter-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString
+
+  - type: worker
+    name: leadhunter-worker
+    runtime: docker
+    dockerfilePath: Dockerfile.cloud
+    plan: starter
+    startCommand: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=1
+    envVars:
+      - key: SEARCH_PROVIDER
+        value: mock
+      - key: DATABASE_URL
+        fromDatabase:
+          name: leadhunter-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: keyvalue
+          name: leadhunter-redis
+          property: connectionString

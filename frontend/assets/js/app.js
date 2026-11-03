@@ -1,11 +1,19 @@
 const SITE = window.LeadHunterSite || {
   basePath: "/",
   isDemo: false,
+  remoteApi: "",
   asset: (p) => p.replace(/^\//, ""),
   page: (p) => p.replace(/^\//, ""),
 };
 
-const API = SITE.isDemo ? null : `${SITE.basePath}api`.replace(/\/{2,}/g, "/");
+function buildApiRoot() {
+  if (SITE.remoteApi) {
+    return SITE.remoteApi.endsWith("/api") ? SITE.remoteApi : `${SITE.remoteApi}/api`;
+  }
+  return `${SITE.basePath}api`.replace(/\/{2,}/g, "/");
+}
+
+const API = SITE.isDemo ? null : buildApiRoot();
 
 const DEMO = {
   dashboard: {
@@ -65,7 +73,8 @@ const DEMO = {
 
 const LeadHunter = {
   apiUrl(path) {
-    return `${SITE.basePath}api${path}`.replace(/\/{2,}/g, "/");
+    const root = API || buildApiRoot();
+    return `${root}${path}`.replace(/\/{2,}/g, "/").replace(":/", "://");
   },
 
   async fetchJSON(url, options = {}) {

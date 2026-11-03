@@ -9,8 +9,12 @@
 
   const params = new URLSearchParams(location.search);
   const basePath = detectBasePath();
+  const publicCfg = window.LeadHunterPublicConfig || {};
+  const remoteApi = (publicCfg.apiBase || "").trim().replace(/\/$/, "");
+
   const isDemo =
-    location.hostname.endsWith("github.io") || params.get("demo") === "1";
+    (location.hostname.endsWith("github.io") && !remoteApi) ||
+    (params.get("demo") === "1" && !remoteApi);
 
   function asset(path) {
     const clean = path.replace(/^\//, "");
@@ -21,7 +25,7 @@
     return asset(path);
   }
 
-  window.LeadHunterSite = { basePath, isDemo, asset, page };
+  window.LeadHunterSite = { basePath, isDemo, remoteApi, asset, page };
 
   if (isDemo && !document.getElementById("demo-banner")) {
     document.addEventListener("DOMContentLoaded", () => {
@@ -29,7 +33,7 @@
       bar.id = "demo-banner";
       bar.className = "alert alert-warning text-center mb-0 rounded-0";
       bar.textContent =
-        "Демо-режим (GitHub Pages): интерфейс с примерными данными, без backend. Полная версия — через Docker или облачный деплой.";
+        "Демо-режим: примерные данные без backend. Полная версия — Render (см. docs/cloud-deploy.md) или Docker локально.";
       document.body.prepend(bar);
     });
   }
