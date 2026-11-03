@@ -20,6 +20,8 @@ docker compose up --build
 
 Откройте [http://localhost:8080](http://localhost:8080).
 
+**Презентация и проверка:** [presentation.html](http://localhost:8080/presentation.html) · [docs/verification-guide.md](docs/verification-guide.md)
+
 API документация: [http://localhost:8080/docs](http://localhost:8080/docs)
 
 ## Конфигурация
